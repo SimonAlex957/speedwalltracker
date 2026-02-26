@@ -53,7 +53,7 @@ def detect_red_objects(image_path):
 
     # invert y axis to match reference coordinate system
     if detected_big_holds.size > 0:
-        detected_big_holds[:,1] *= -1.0
+        detected_big_holds[:,1] = image.shape[0] - detected_big_holds[:,1]
 
     # Show result
     cv2.imwrite("output.jpg", image)
@@ -87,12 +87,11 @@ def draw_5m_line(image, homography_matrix):
     print(f"Center pixel ({center_x_pixel}, {center_y_pixel}) maps to world coordinates ({world_x:.2f}, {world_y:.2f}) mm")
     
     # Create a 5-meter long line in world coordinates (5000 mm)
-    # We'll create a horizontal line (along X axis) centered at the world point
+    # We'll create a vertical line (along Y axis) centered at the world point
     line_length_mm = 5000  # 5 meters = 5000 mm
-    
-    # Line endpoints in world coordinates (centered)
-    world_start = np.array([[world_x - line_length_mm/2, world_y]], dtype=np.float32)
-    world_end = np.array([[world_x + line_length_mm/2, world_y]], dtype=np.float32)
+    # Line endpoints in world coordinates (centered, vertical)
+    world_start = np.array([[world_x, world_y - line_length_mm/2]], dtype=np.float32)
+    world_end = np.array([[world_x, world_y + line_length_mm/2]], dtype=np.float32)
     
     # Reshape for perspectiveTransform
     world_start = world_start.reshape(-1, 1, 2)
@@ -107,8 +106,8 @@ def draw_5m_line(image, homography_matrix):
     x2, y2 = int(pixel_end[0, 0, 0]), int(pixel_end[0, 0, 1])
     
     # Fix y-axis inversion (since we inverted y earlier)
-    y1 = -y1
-    y2 = -y2
+    y1 = image.shape[0] - y1
+    y2 = image.shape[0] - y2
     
     print(f"Line in image: from ({x1}, {y1}) to ({x2}, {y2})")
     
@@ -164,9 +163,6 @@ if homography_matrix is not None:
     cv2.imwrite("image_with_5m_line.jpg", result)
     print("\nSaved image with 5m line as 'image_with_5m_line.jpg'")
     
-    # Display the image
-    cv2.imshow("5m Line in Middle of Image", result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+   
 else:
     print("Error: Homography matrix could not be computed")
